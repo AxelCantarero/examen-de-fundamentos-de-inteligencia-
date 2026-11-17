@@ -12,7 +12,8 @@ class ProcesadorPLN:
         texto = unicodedata.normalize("NFD", texto)
 
         texto = "".join(
-            caracter for caracter in texto
+            caracter
+            for caracter in texto
             if unicodedata.category(caracter) != "Mn"
         )
 
@@ -22,10 +23,12 @@ class ProcesadorPLN:
 
         for frase in frases:
 
+            frase = self.normalizar(frase)
+
             patron = (
-                r"(?<!\w)" +
-                re.escape(frase) +
-                r"(?!\w)"
+                r"(?<!\w)"
+                + re.escape(frase)
+                + r"(?!\w)"
             )
 
             if re.search(patron, texto):
@@ -35,30 +38,29 @@ class ProcesadorPLN:
 
     def extraer_nombre(self, texto):
 
-        patron = (
-            r"^\s*(?:hola[, ]+)?"
-            r"(?:me llamo|mi nombre es)\s+"
-            r"([\w]+(?:\s+[\w]+){0,2})"
-            r"\s*[.!?]*\s*$"
-        )
+        patrones = [
+            r"me llamo\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ ]+)",
+            r"mi nombre es\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ ]+)"
+        ]
 
-        resultado = re.search(
-            patron,
-            texto,
-            re.IGNORECASE
-        )
+        for patron in patrones:
 
-        if resultado:
-            nombre = resultado.group(1).strip()
-            return nombre.title()
+            resultado = re.search(
+                patron,
+                texto,
+                re.IGNORECASE
+            )
+
+            if resultado:
+                return resultado.group(1).strip().title()
 
         return None
 
     def analizar(self, texto):
 
-        mensaje = self.normalizar(texto)
+        texto_normalizado = self.normalizar(texto)
 
-        # Opciones numéricas del menú
+        # Opciones del menú numérico
         opciones = {
             "1": "python",
             "2": "programacion",
@@ -73,175 +75,281 @@ class ProcesadorPLN:
             "0": "despedida"
         }
 
-        if mensaje in opciones:
-            return opciones[mensaje], None
+        if texto_normalizado in opciones:
+            return opciones[texto_normalizado], None
 
-        # Consultar el nombre del usuario
-        if self.contiene_frase(mensaje, [
+        # Registrar nombre
+        if self.contiene_frase(texto_normalizado, [
+            "me llamo",
+            "mi nombre es"
+        ]):
+
+            nombre = self.extraer_nombre(texto)
+
+            if nombre:
+                return "nombre", nombre
+
+        # Consultar nombre
+        if self.contiene_frase(texto_normalizado, [
             "como me llamo",
-            "cual es mi nombre",
             "recuerdas mi nombre",
-            "sabes mi nombre"
+            "cual es mi nombre"
         ]):
             return "consultar_nombre", None
 
-        # Identificar al chatbot
-        if self.contiene_frase(mensaje, [
-            "como te llamas",
+        # Identidad
+        if self.contiene_frase(texto_normalizado, [
             "quien eres",
-            "que eres"
+            "que eres",
+            "como te llamas",
+            "que es academia"
         ]):
             return "identidad", None
 
-        # Reconocer cuando el usuario proporciona su nombre
-        nombre = self.extraer_nombre(texto)
+        # Menú
+        if self.contiene_frase(texto_normalizado, [
+            "menu",
+            "mostrar menu",
+            "opciones disponibles",
+            "que puedes hacer"
+        ]):
+            return "menu", None
 
-        if nombre:
-            return "nombre", nombre
+        # Historial
+        if self.contiene_frase(texto_normalizado, [
+            "historial",
+            "ver historial",
+            "mis consultas anteriores"
+        ]):
+            return "historial", None
 
-        # Despedidas
-        if self.contiene_frase(mensaje, [
+        # Despedida
+        if self.contiene_frase(texto_normalizado, [
             "adios",
             "hasta luego",
             "nos vemos",
-            "salir",
-            "terminar"
+            "me despido",
+            "hasta pronto",
+            "chao"
         ]):
-            return "despedida", None
+            return "Intent_Despedir", None
 
-        # Agradecimientos
-        if self.contiene_frase(mensaje, [
+        # Saludo
+        if self.contiene_frase(texto_normalizado, [
+            "hola",
+            "buenos dias",
+            "buenas tardes",
+            "buenas noches",
+            "que tal",
+            "hey"
+        ]):
+            return "Intent_Saludar", None
+
+        # Consultar horario
+        if self.contiene_frase(texto_normalizado, [
+            "horario",
+            "horarios de clases",
+            "horario de clases",
+            "cuando tengo clases",
+            "a que hora tengo clases",
+            "horario de asignaturas"
+        ]):
+            return "Intent_Consultar_Horario", None
+
+        # Calendario académico
+        if self.contiene_frase(texto_normalizado, [
+            "calendario academico",
+            "calendario universitario",
+            "fechas del semestre",
+            "inicio de clases",
+            "fin de semestre",
+            "periodo academico",
+            "cuando comienzan las clases"
+        ]):
+            return "Intent_Calendario_Academico", None
+
+        # Requisitos y trámites
+        if self.contiene_frase(texto_normalizado, [
+            "requisitos",
+            "tramites",
+            "matricula",
+            "prematricula",
+            "inscripcion",
+            "retirar una asignatura",
+            "constancia de estudios",
+            "certificado de notas",
+            "registro academico",
+            "donde hago un tramite"
+        ]):
+            return "Intent_Requisitos_Tramites", None
+
+        # Consultar notas
+        if self.contiene_frase(texto_normalizado, [
+            "notas",
+            "calificaciones",
+            "consultar notas",
+            "ver mis notas",
+            "mis calificaciones",
+            "record academico",
+            "resultados de evaluacion"
+        ]):
+            return "Intent_Consultar_Notas", None
+
+        # Información de docentes
+        if self.contiene_frase(texto_normalizado, [
+            "docente",
+            "profesor",
+            "profesora",
+            "informacion del docente",
+            "contactar a un profesor",
+            "quien imparte la asignatura",
+            "docentes de mi carrera"
+        ]):
+            return "Intent_Info_Docente", None
+
+        # Becas y beneficios
+        if self.contiene_frase(texto_normalizado, [
+            "beca",
+            "becas",
+            "beneficios estudiantiles",
+            "ayuda economica",
+            "solicitar una beca",
+            "requisitos para una beca",
+            "apoyo estudiantil"
+        ]):
+            return "Intent_Becas_Beneficios", None
+
+        # Material de estudio
+        if self.contiene_frase(texto_normalizado, [
+            "material de estudio",
+            "materiales de estudio",
+            "biblioteca",
+            "libros",
+            "documentos de estudio",
+            "recursos educativos",
+            "material de una asignatura",
+            "donde encuentro material"
+        ]):
+            return "Intent_Material_Estudio", None
+
+        # Explicar un tema
+        if self.contiene_frase(texto_normalizado, [
+            "explicame",
+            "explicar un tema",
+            "no entiendo",
+            "ayudame a entender",
+            "tengo dudas sobre",
+            "necesito ayuda con un tema"
+        ]):
+            return "Intent_Explicar_Tema", None
+
+        # Temas originales del chatbot
+
+        # Python
+        if self.contiene_frase(texto_normalizado, [
+            "python",
+            "que es python",
+            "lenguaje python"
+        ]):
+            return "python", None
+
+        # Programación
+        if self.contiene_frase(texto_normalizado, [
+            "programacion",
+            "que es programacion",
+            "que significa programar",
+            "que es programar"
+        ]):
+            return "programacion", None
+
+        # Informática
+        if self.contiene_frase(texto_normalizado, [
+            "informatica",
+            "que es informatica"
+        ]):
+            return "informatica", None
+
+        # Java
+        if self.contiene_frase(texto_normalizado, [
+            "java",
+            "que es java",
+            "lenguaje java"
+        ]):
+            return "java", None
+
+        # Algoritmos
+        if self.contiene_frase(texto_normalizado, [
+            "algoritmo",
+            "algoritmos",
+            "que es un algoritmo"
+        ]):
+            return "algoritmos", None
+
+        # Bases de datos
+        if self.contiene_frase(texto_normalizado, [
+            "bases de datos",
+            "base de datos",
+            "que es una base de datos"
+        ]):
+            return "bases_datos", None
+
+        # Redes
+        if self.contiene_frase(texto_normalizado, [
+            "redes",
+            "redes informaticas",
+            "que son las redes"
+        ]):
+            return "redes", None
+
+        # Hardware
+        if self.contiene_frase(texto_normalizado, [
+            "hardware",
+            "que es hardware"
+        ]):
+            return "hardware", None
+
+        # Software
+        if self.contiene_frase(texto_normalizado, [
+            "software",
+            "que es software"
+        ]):
+            return "software", None
+
+        # Seguridad informática
+        if self.contiene_frase(texto_normalizado, [
+            "seguridad informatica",
+            "que es seguridad informatica"
+        ]):
+            return "seguridad", None
+
+        # Sistemas operativos
+        if self.contiene_frase(texto_normalizado, [
+            "sistema operativo",
+            "sistemas operativos",
+            "que es un sistema operativo"
+        ]):
+            return "sistemas_operativos", None
+
+        # Internet
+        if self.contiene_frase(texto_normalizado, [
+            "internet",
+            "que es internet"
+        ]):
+            return "internet", None
+
+        # Ayuda
+        if self.contiene_frase(texto_normalizado, [
+            "ayuda",
+            "necesito ayuda"
+        ]):
+            return "ayuda", None
+
+        # Agradecimiento
+        if self.contiene_frase(texto_normalizado, [
             "gracias",
             "muchas gracias",
             "te agradezco"
         ]):
             return "agradecimiento", None
-
-        # Saludos
-        if self.contiene_frase(mensaje, [
-            "hola",
-            "buenos dias",
-            "buenas tardes",
-            "buenas noches",
-            "hey"
-        ]):
-            return "saludo", None
-
-        # Menú e historial
-        if self.contiene_frase(mensaje, [
-            "menu",
-            "mostrar opciones",
-            "ver opciones"
-        ]):
-            return "menu", None
-
-      # Consultar historial
-        if self.contiene_frase(mensaje, [
-            "historial",
-            "ver historial",
-            "mostrar historial",
-            "ver conversacion",
-            "mostrar conversacion",
-            "mis mensajes",
-            "mensajes anteriores"
-        ]):
-            return "historial", None
-
-        # Temas académicos
-        temas = {
-
-            "python": [
-                "python",
-                "lenguaje python"
-            ],
-
-            "programacion": [
-                "programacion",
-                "programar",
-                "codigo fuente"
-            ],
-
-            "informatica": [
-                "informatica",
-                "computacion"
-            ],
-
-            "java": [
-                "java",
-                "lenguaje java"
-            ],
-
-            "algoritmos": [
-                "algoritmo",
-                "algoritmos"
-            ],
-
-            "bases_datos": [
-                "base de datos",
-                "bases de datos",
-                "mysql",
-                "postgresql",
-                "sql server"
-            ],
-
-            "redes": [
-                "redes",
-                "red informatica",
-                "redes informaticas",
-                "lan",
-                "wan",
-                "wlan"
-            ],
-
-            "hardware": [
-                "hardware",
-                "memoria ram",
-                "procesador",
-                "placa madre"
-            ],
-
-            "software": [
-                "software",
-                "programas informaticos"
-            ],
-
-            "seguridad": [
-                "seguridad informatica",
-                "ciberseguridad",
-                "virus informatico"
-            ],
-
-            "sistemas_operativos": [
-                "sistema operativo",
-                "sistemas operativos",
-                "windows",
-                "linux",
-                "android"
-            ],
-
-            "internet": [
-                "internet",
-                "red mundial"
-            ],
-
-            "horario": [
-                "horario",
-                "clases",
-                "asignaturas"
-            ]
-        }
-
-        for intencion, palabras in temas.items():
-
-            if self.contiene_frase(mensaje, palabras):
-                return intencion, None
-
-        # Ayuda
-        if self.contiene_frase(mensaje, [
-            "ayuda",
-            "que puedes hacer",
-            "opciones disponibles"
-        ]):
-            return "ayuda", None
 
         return "desconocido", None

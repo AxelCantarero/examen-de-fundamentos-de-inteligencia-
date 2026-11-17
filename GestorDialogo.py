@@ -1,6 +1,7 @@
 
 from Memoria import Memoria
 from ProcesadorPLN import ProcesadorPLN
+from BaseConocimiento import BaseConocimiento
 from respuestas import RESPUESTAS
 
 
@@ -10,6 +11,7 @@ class GestorDialogo:
 
         self.memoria = Memoria()
         self.procesador = ProcesadorPLN()
+        self.base_conocimiento = BaseConocimiento()
         self.finalizar = False
 
     def responder(self, mensaje):
@@ -21,14 +23,14 @@ class GestorDialogo:
 
         intencion, dato = self.procesador.analizar(mensaje)
 
-        # Guardar nombre
+        # Registrar nombre
         if intencion == "nombre":
 
             self.memoria.guardar_nombre(dato)
 
             respuesta = (
                 f"¡Mucho gusto, {dato}! "
-                "Ya recuerdo tu nombre. ¿En qué puedo ayudarte?"
+                "¿En qué puedo ayudarte?"
             )
 
         # Consultar nombre
@@ -37,9 +39,11 @@ class GestorDialogo:
             nombre = self.memoria.obtener_nombre()
 
             if nombre:
+
                 respuesta = f"Tu nombre es {nombre}."
 
             else:
+
                 respuesta = (
                     "Todavía no me has indicado tu nombre. "
                     "Puedes decirme: Me llamo [tu nombre]."
@@ -48,58 +52,83 @@ class GestorDialogo:
         # Consultar identidad
         elif intencion == "identidad":
 
-            respuesta = RESPUESTAS["identidad"]
+            respuesta = RESPUESTAS.get(
+                "identidad",
+                "Soy AcademIA, tu asistente académico."
+            )
 
         # Mostrar menú
         elif intencion == "menu":
 
-            respuesta = RESPUESTAS["menu"]
+            respuesta = RESPUESTAS.get(
+                "menu",
+                "Puedes consultar temas académicos y orientación universitaria."
+            )
 
-        # Mostrar historial
+        # Consultar historial
         elif intencion == "historial":
 
             historial = self.memoria.obtener_historial()
 
             if historial:
-               respuesta = self.memoria.mostrar_historial()
+
+                respuesta = self.memoria.mostrar_historial()
+
             else:
-               respuesta = "Todavía no hay mensajes registrados."
+
+                respuesta = "Todavía no hay mensajes registrados."
 
         # Despedida
-        elif intencion == "despedida":
+        elif intencion in ["despedida", "Intent_Despedir"]:
 
             nombre = self.memoria.obtener_nombre()
 
             if nombre:
+
                 respuesta = (
                     f"¡Hasta pronto, {nombre}! "
-                    "Gracias por utilizar el chatbot académico."
+                    "Gracias por utilizar AcademIA."
                 )
 
             else:
-                respuesta = RESPUESTAS["despedida"]
+
+                respuesta = self.base_conocimiento.obtener_respuesta(
+                    "Intent_Despedir"
+                )
 
             self.finalizar = True
 
-        # Saludos personalizados
-        elif intencion == "saludo":
+        # Saludo
+        elif intencion == "Intent_Saludar":
 
             nombre = self.memoria.obtener_nombre()
 
             if nombre:
-                respuesta = f"¡Hola nuevamente, {nombre}!"
+
+                respuesta = (
+                    f"¡Hola nuevamente, {nombre}! "
+                    "¿En qué puedo orientarte?"
+                )
 
             else:
-                respuesta = RESPUESTAS["saludo"]
 
-        # Respuestas académicas y fallback
+                respuesta = self.base_conocimiento.obtener_respuesta(
+                    intencion
+                )
+
+        # Consultas de temas originales y respuestas existentes
+        elif intencion in RESPUESTAS:
+
+            respuesta = RESPUESTAS[intencion]
+
+        # Nuevas consultas de orientación académica
         else:
 
-            respuesta = RESPUESTAS.get(
-                intencion,
-                RESPUESTAS["desconocido"]
+            respuesta = self.base_conocimiento.obtener_respuesta(
+                intencion
             )
 
+        # Guardar respuesta del chatbot
         self.memoria.guardar_mensaje(
             "Chatbot",
             respuesta
