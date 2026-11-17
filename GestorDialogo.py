@@ -22,6 +22,11 @@ class GestorDialogo:
         )
 
         intencion, dato = self.procesador.analizar(mensaje)
+        entidades = self.procesador.extraer_entidades(mensaje)
+
+        # Si se extrajo nombre mediante entidad y no está en memoria
+        if entidades.get("estudiante") and not self.memoria.obtener_nombre():
+            self.memoria.guardar_nombre(entidades["estudiante"])
 
         # Registrar nombre
         if intencion == "nombre":
@@ -121,11 +126,12 @@ class GestorDialogo:
 
             respuesta = RESPUESTAS[intencion]
 
-        # Nuevas consultas de orientación académica
+        # Nuevas consultas de orientación académica (contextualizadas con entidades)
         else:
 
             respuesta = self.base_conocimiento.obtener_respuesta(
-                intencion
+                intencion,
+                entidades
             )
 
         # Guardar respuesta del chatbot

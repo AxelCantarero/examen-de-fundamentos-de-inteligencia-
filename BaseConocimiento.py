@@ -88,7 +88,55 @@ class BaseConocimiento:
             )
         }
 
-    def obtener_respuesta(self, intencion):
+    def obtener_respuesta(self, intencion, entidades=None):
+        """
+        Retorna la respuesta para una intención dada. Si se proporcionan
+        entidades extraídas, contextualiza la respuesta dinámicamente.
+        """
+        if entidades:
+            if intencion == "Intent_Consultar_Horario" and entidades.get("asignatura"):
+                asig = entidades["asignatura"].title()
+                return (
+                    f"Para consultar el horario específico de la asignatura '{asig}', "
+                    "revisa los canales oficiales del CUR Las Minas o consulta con "
+                    "la coordinación de tu carrera."
+                )
+
+            if intencion == "Intent_Requisitos_Tramites" and entidades.get("tramite"):
+                tram = entidades["tramite"].title()
+                return (
+                    f"Para el trámite de '{tram}', debes dirigirte a Registro Académico "
+                    "del CUR Las Minas con tus documentos en regla y verificar los "
+                    "requisitos y fechas habilitadas."
+                )
+
+            if intencion == "Intent_Info_Docente":
+                if entidades.get("asignatura"):
+                    asig = entidades["asignatura"].title()
+                    return (
+                        f"Para consultar información sobre el docente a cargo de la asignatura "
+                        f"'{asig}', dirígete a la coordinación de tu carrera en el CUR Las Minas."
+                    )
+                if entidades.get("docente"):
+                    doc = entidades["docente"].title()
+                    return (
+                        f"Para comunicarte con {doc}, consulta los horarios de atención "
+                        "y datos de contacto en la coordinación de carrera del CUR Las Minas."
+                    )
+
+            if intencion == "Intent_Calendario_Academico" and entidades.get("periodo"):
+                per = entidades["periodo"].title()
+                return (
+                    f"Respecto a las fechas para '{per}', puedes verificar el cronograma "
+                    "oficial en el calendario académico de URACCAN o en Registro Académico."
+                )
+
+            if intencion == "Intent_Material_Estudio" and entidades.get("asignatura"):
+                asig = entidades["asignatura"].title()
+                return (
+                    f"Para acceder a bibliografía y materiales de '{asig}', puedes consultar "
+                    "la Biblioteca de URACCAN o solicitar la guía didáctica a tu docente."
+                )
 
         return self.informacion.get(
             intencion,
