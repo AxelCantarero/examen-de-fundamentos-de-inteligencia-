@@ -1,10 +1,3 @@
-"""
-Estructura de Lenguaje Natural (PLN) para el Chatbot AcademIA.
-
-Define formalmente:
-1. Las 10 intenciones principales con al menos 20 frases de entrenamiento cada una (200+ frases).
-2. Las 5 entidades principales (Asignatura, Docente, Trámite, Período, Estudiante).
-"""
 
 INTENCIONES = {
     "Intent_Saludar": {
